@@ -1,4 +1,4 @@
-import { CODE_VALIDATION_FAIL, CODE_BYPASS_ERROR_ARRAY } from 'utils/constants'
+import { CODE_VALIDATION_FAIL, CODE_BYPASS_ERROR_ARRAY } from 'src/utils/constants'
 import axios, { AxiosRequestConfig, RawAxiosRequestHeaders } from 'axios'
 
 enum HttpMethods {

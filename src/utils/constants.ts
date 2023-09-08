@@ -84,3 +84,5 @@ export const IS_PARENT_NO = 0
  */
 
 export const ALLOW_USING_SINGLE = 1
+
+export const API_KEY = 'AIzaSyAtIpXk1W3rvqJ63Tpoat2Q3HYhhiHnqPo'

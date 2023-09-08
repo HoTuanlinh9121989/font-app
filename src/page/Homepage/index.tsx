@@ -1,22 +1,48 @@
-import React, { useState, useEffect } from 'react'
-import axios from 'axios'
-import GoogleFontLoader from 'react-google-font-loader'
+import React, { useState, useEffect, useContext } from 'react'
+import SearchBar from 'src/core-components/SearchBar'
+import Filter from 'src/core-components/Filter'
+import { FilterContext } from 'src/context/filterContext'
+import { getFonts } from 'src/api/index'
+import { API_KEY } from 'src/utils'
+import InfiniteScrollList from 'src/core-components/InfiniteScrollList'
+import queryString from 'query-string'
+import { useLocation } from 'react-router-dom'
 
 const Home: React.FC = () => {
-  // Sample font data (you can replace this with actual data fetched from the Google Fonts API)
   const [fonts, setFonts] = useState<any[]>([])
+  const [filteredResults, setFilteredResults] = useState<any[]>([])
 
-  console.log('fonts', fonts)
+  const { info, setInfo } = useContext(FilterContext)
   useEffect(() => {
-    // Fetch fonts data from the Google Fonts API
-    axios
-      .get('https://www.googleapis.com/webfonts/v1/webfonts?key=YOUR_API_KEY')
-      .then((response) => {
-        setFonts(response.data.items)
-      })
-      .catch((error) => {
-        console.error('Error fetching fonts:', error)
-      })
+    callGetFonts()
+  }, [info?.showVariableFonts])
+
+  useEffect(() => {
+    if (info?.searchText?.length > 0 || info?.category?.length > 0) {
+      const results = fonts?.filter((item) => item?.family?.toLowerCase().includes(info?.searchText?.toLowerCase()))
+      if (info?.category) {
+        setFilteredResults(results.filter((item) => item?.category?.includes(info?.category)))
+      } else {
+        setFilteredResults(results)
+      }
+    } else {
+      setFilteredResults(fonts)
+    }
+  }, [info?.searchText, info?.category])
+
+  useEffect(() => {
+    const stringified = queryString.stringify(info, {
+      skipEmptyString: true,
+      skipNull: true,
+    })
+    window.history.replaceState(null, '', '?' + stringified)
+  }, [info])
+
+  const location = useLocation()
+
+  useEffect(() => {
+    const parsed = queryString.parse(location.search)
+    setInfo && setInfo({ ...info, ...parsed })
   }, [])
 
   // Function to toggle font selection
@@ -25,48 +51,26 @@ const Home: React.FC = () => {
   //     // You may want to add a 'selected' property to each font object in the 'fonts' state
   //   }
 
+  const callGetFonts = async () => {
+    const data: any = await getFonts({
+      key: API_KEY,
+      capability: info?.showVariableFonts ? 'VF' : 'WOFF2',
+    })
+    setFonts(data.items)
+  }
+
   return (
-    <div className="bg-gray-100 min-h-screen">
-      {/* Header */}
-      <header className="bg-white py-4">
-        <div className="container mx-auto flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Google Fonts</h1>
-          {/* Search input and other header components */}
-        </div>
-      </header>
-
-      {/* Main Content */}
+    <div className=" min-h-screen ">
       <main className="container mx-auto py-8">
-        {/* Font Filters */}
-        {/* Font List (grid layout) */}
-        {/* Font Details Sidebar */}
-        <>
-          {/* Use it! */}
-          <GoogleFontLoader
-            fonts={[
-              {
-                font: 'Roboto',
-                weights: [400, '400i'],
-              },
-              {
-                font: 'Roboto Mono',
-                weights: [400, 700],
-              },
-            ]}
-            subsets={['cyrillic-ext', 'greek']}
-          />
-
-          <p style={{ fontFamily: 'Roboto Mono, monospaced' }}>This will be in Roboto Mono!</p>
-          <p style={{ fontFamily: 'Roboto, sans-serif' }}>This will be in Roboto!</p>
-        </>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-white py-4 mt-8">
-        <div className="container mx-auto text-center">
-          <p className="text-gray-500">© 2023 Google Fonts</p>
+        <div className="container mx-auto flex items-center ">
+          <SearchBar />
         </div>
-      </footer>
+        <div className="container flex items-center justify-between">
+          <Filter />
+        </div>
+
+        <InfiniteScrollList items={info?.searchText?.length > 0 ? filteredResults : fonts} itemsPerPage={10} />
+      </main>
     </div>
   )
 }
